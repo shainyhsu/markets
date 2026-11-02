@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC Live Rate & Charts</title>
+    <title>Live Rate & Charts</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #f7931a;
-            --bg-color: #f8f9fa;
-            --card-color: #ffffff;
-            --text-color: #333333;
+            --bg-color: #0f0f0f;
+            --card-color: #1c1c1e;
+            --text-color: #e8e8e8;
+            --secondary-text: #999;
+            --border-color: #2a2a2a;
+            --input-border: #333;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -27,7 +29,7 @@
         .container {
             background: var(--card-color);
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
             padding: 24px;
             width: 100%;
             max-width: 480px;
@@ -39,44 +41,63 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+            gap: 8px;
         }
         h2 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             text-align: left;
             flex: 1;
+            white-space: nowrap;
         }
-        .lang-btn {
-            background: none;
-            border: 1px solid #e0e0e0;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .symbol-btn, .lang-btn {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
             border-radius: 8px;
-            width: 36px;
             height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 13px;
+            font-weight: 600;
             transition: background 0.2s, border-color 0.2s;
-            flex-shrink: 0;
+            padding: 0 10px;
+            color: #ccc;
         }
-        .lang-btn:hover {
-            background: #f5f5f5;
-            border-color: #ccc;
+        .symbol-btn:hover, .lang-btn:hover {
+            background: #333;
+            border-color: #555;
+        }
+        .symbol-btn.active {
+            background: #f7931a;
+            border-color: #f7931a;
+            color: #fff;
+        }
+        .lang-btn {
+            width: 36px;
+            padding: 0;
+            font-size: 18px;
         }
         .input-group {
             display: flex;
             align-items: center;
             margin-bottom: 16px;
-            border-bottom: 1px solid #eaeaea;
+            border-bottom: 1px solid var(--input-border);
             padding-bottom: 8px;
         }
         .currency-label {
             width: 70px;
             font-size: 18px;
             font-weight: 600;
-            color: #555;
+            color: #aaa;
         }
         input {
             flex: 1;
@@ -89,7 +110,7 @@
             width: 100%;
             background: transparent;
         }
-        input::placeholder { color: #ccc; }
+        input::placeholder { color: #666; }
         .live-dot {
             display: inline-block;
             width: 8px;
@@ -106,7 +127,7 @@
         }
         .chart-title {
             font-size: 14px;
-            color: #666;
+            color: var(--secondary-text);
             margin-top: 24px;
             margin-bottom: 8px;
             font-weight: 500;
@@ -119,7 +140,7 @@
         }
         .loading {
             text-align: center;
-            color: #999;
+            color: #666;
             font-size: 14px;
             padding: 20px 0;
         }
@@ -129,118 +150,180 @@
 <div class="container">
     <div class="header">
         <h2 id="title">即時匯率換算 <span class="live-dot" title="Live"></span></h2>
-        <button class="lang-btn" id="lang-btn" title="Switch language">🌐</button>
+        <div class="header-actions">
+            <button class="symbol-btn active" id="btn-btc" data-symbol="BTCUSDT">BTC</button>
+            <button class="symbol-btn" id="btn-xau" data-symbol="XAUUSDT">XAU</button>
+            <button class="lang-btn" id="lang-btn" title="Switch language">🌐</button>
+        </div>
     </div>
 
     <div class="input-group">
-        <span class="currency-label">BTC</span>
-        <input type="number" id="btc-input" placeholder="1" step="any" min="0" value="1" aria-label="BTC amount">
+        <span class="currency-label" id="base-label">BTC</span>
+        <input type="number" id="base-input" placeholder="1" step="any" min="0" value="1" aria-label="Amount">
     </div>
     <div class="input-group">
         <span class="currency-label">USD</span>
         <input type="text" id="usd-input" readonly placeholder="Connecting..." aria-label="USD amount">
     </div>
 
-    <div class="chart-title" id="label-1h">比特幣最近 1 小時價格曲線 (USD)</div>
+    <div class="chart-title" id="label-1h">最近 1 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-1h" class="loading">載入中...</div>
-        <canvas id="chart-1h" style="display:none;" aria-label="BTC 1H chart"></canvas>
+        <canvas id="chart-1h" style="display:none;"></canvas>
     </div>
 
-    <div class="chart-title" id="label-24h">比特幣最近 24 小時價格曲線 (USD)</div>
+    <div class="chart-title" id="label-24h">最近 24 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-24h" class="loading">載入中...</div>
-        <canvas id="chart-24h" style="display:none;" aria-label="BTC 24H chart"></canvas>
+        <canvas id="chart-24h" style="display:none;"></canvas>
     </div>
 
-    <div class="chart-title" id="label-3d">比特幣最近 3 天價格曲線 (USD)</div>
+    <div class="chart-title" id="label-3d">最近 3 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-3d" class="loading">載入中...</div>
-        <canvas id="chart-3d" style="display:none;" aria-label="BTC 3D chart"></canvas>
+        <canvas id="chart-3d" style="display:none;"></canvas>
     </div>
 
-    <div class="chart-title" id="label-7d">比特幣最近 7 天價格曲線 (USD)</div>
+    <div class="chart-title" id="label-7d">最近 7 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-7d" class="loading">載入中...</div>
-        <canvas id="chart-7d" style="display:none;" aria-label="BTC 7D chart"></canvas>
+        <canvas id="chart-7d" style="display:none;"></canvas>
     </div>
 </div>
 <script>
+    // ========== Config ==========
+    const SYMBOLS = {
+        BTCUSDT: {
+            name: { zh: '比特幣', en: 'Bitcoin' },
+            short: 'BTC',
+            color: '#f7931a',
+            wsBase: 'wss://stream.binance.com:9443/ws/',
+            restBase: 'https://api.binance.com/api/v3/'
+        },
+        XAUUSDT: {
+            name: { zh: '黃金', en: 'Gold' },
+            short: 'XAU',
+            color: '#f0c14b',          // brighter gold for dark background
+            wsBase: 'wss://fstream.binance.com/ws/',
+            restBase: 'https://fapi.binance.com/fapi/v1/'
+        }
+    };
+
+    let currentSymbol = localStorage.getItem('live_symbol') || 'BTCUSDT';
+    let currentLang = localStorage.getItem('btc_lang') || 'zh';
+    let currentPrice = 0;
+    let prices1h = [];
+    let lastAppendTs = 0;
+    let ws = null;
+    const chartInstances = {};
+
+    const baseInput = document.getElementById('base-input');
+    const usdInput = document.getElementById('usd-input');
+    const baseLabel = document.getElementById('base-label');
+
     // ========== i18n ==========
     const i18n = {
         zh: {
             title: '即時匯率換算',
-            label1h: '比特幣最近 1 小時價格曲線 (USD)',
-            label24h: '比特幣最近 24 小時價格曲線 (USD)',
-            label3d: '比特幣最近 3 天價格曲線 (USD)',
-            label7d: '比特幣最近 7 天價格曲線 (USD)',
+            label1h: (s) => `${s} 最近 1 小時價格曲線 (USD)`,
+            label24h: (s) => `${s} 最近 24 小時價格曲線 (USD)`,
+            label3d: (s) => `${s} 最近 3 天價格曲線 (USD)`,
+            label7d: (s) => `${s} 最近 7 天價格曲線 (USD)`,
             loading: '載入中...',
             loadFail: '載入失敗，請稍後重試',
             connecting: '連線中...'
         },
         en: {
             title: 'Live Exchange Rate',
-            label1h: 'BTC Last 1 Hour Price Chart (USD)',
-            label24h: 'BTC Last 24 Hours Price Chart (USD)',
-            label3d: 'BTC Last 3 Days Price Chart (USD)',
-            label7d: 'BTC Last 7 Days Price Chart (USD)',
+            label1h: (s) => `${s} Last 1 Hour Price Chart (USD)`,
+            label24h: (s) => `${s} Last 24 Hours Price Chart (USD)`,
+            label3d: (s) => `${s} Last 3 Days Price Chart (USD)`,
+            label7d: (s) => `${s} Last 7 Days Price Chart (USD)`,
             loading: 'Loading...',
             loadFail: 'Failed to load, please try again later',
             connecting: 'Connecting...'
         }
     };
 
-    let currentLang = localStorage.getItem('btc_lang') || 'zh';
-
     function applyLang(lang) {
         currentLang = lang;
         localStorage.setItem('btc_lang', lang);
         document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+        updateTexts();
+    }
 
-        const t = i18n[lang];
+    function updateTexts() {
+        const t = i18n[currentLang];
+        const conf = SYMBOLS[currentSymbol];
+        const name = conf.name[currentLang];
+
         document.getElementById('title').innerHTML = t.title + ' <span class="live-dot" title="Live"></span>';
-        document.getElementById('label-1h').textContent = t.label1h;
-        document.getElementById('label-24h').textContent = t.label24h;
-        document.getElementById('label-3d').textContent = t.label3d;
-        document.getElementById('label-7d').textContent = t.label7d;
+        document.getElementById('label-1h').textContent = t.label1h(name);
+        document.getElementById('label-24h').textContent = t.label24h(name);
+        document.getElementById('label-3d').textContent = t.label3d(name);
+        document.getElementById('label-7d').textContent = t.label7d(name);
+        baseLabel.textContent = conf.short;
 
-        // Update loading texts if still visible
         ['1h', '24h', '3d', '7d'].forEach(id => {
             const el = document.getElementById(`loading-${id}`);
-            if (el && el.style.display !== 'none') {
-                el.textContent = t.loading;
-            }
+            if (el && el.style.display !== 'none') el.textContent = t.loading;
         });
-
-        const usdInput = document.getElementById('usd-input');
-        if (usdInput.value === '' || usdInput.placeholder.includes('連') || usdInput.placeholder.includes('Connect')) {
-            usdInput.placeholder = t.connecting;
-        }
+        if (!usdInput.value) usdInput.placeholder = t.connecting;
     }
 
     document.getElementById('lang-btn').addEventListener('click', () => {
         applyLang(currentLang === 'zh' ? 'en' : 'zh');
     });
 
-    // ========== Price & Charts ==========
-    let btcToUsd = 0;
-    const chartInstances = {};
-    let prices1h = [];
-    let lastAppendTs = 0;
+    // ========== Symbol Switch ==========
+    function switchSymbol(symbol) {
+        if (symbol === currentSymbol) return;
+        currentSymbol = symbol;
+        localStorage.setItem('live_symbol', symbol);
 
-    const btcInput = document.getElementById('btc-input');
-    const usdInput = document.getElementById('usd-input');
+        document.getElementById('btn-btc').classList.toggle('active', symbol === 'BTCUSDT');
+        document.getElementById('btn-xau').classList.toggle('active', symbol === 'XAUUSDT');
 
+        currentPrice = 0;
+        prices1h = [];
+        lastAppendTs = 0;
+        usdInput.value = '';
+        usdInput.placeholder = i18n[currentLang].connecting;
+
+        Object.keys(chartInstances).forEach(id => {
+            chartInstances[id].destroy();
+            delete chartInstances[id];
+            document.getElementById(`chart-${id}`).style.display = 'none';
+            document.getElementById(`loading-${id}`).style.display = 'block';
+            document.getElementById(`loading-${id}`).textContent = i18n[currentLang].loading;
+        });
+
+        updateTexts();
+        connectWebSocket();
+        loadCharts();
+    }
+
+    document.getElementById('btn-btc').addEventListener('click', () => switchSymbol('BTCUSDT'));
+    document.getElementById('btn-xau').addEventListener('click', () => switchSymbol('XAUUSDT'));
+
+    // ========== WebSocket ==========
     function connectWebSocket() {
-        const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+        if (ws) {
+            ws.onclose = null;
+            ws.close();
+        }
+
+        const conf = SYMBOLS[currentSymbol];
+        const stream = currentSymbol.toLowerCase() + '@trade';
+        ws = new WebSocket(conf.wsBase + stream);
 
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
                 const price = parseFloat(data.p);
                 if (price > 0) {
-                    btcToUsd = price;
-                    updateRates(parseFloat(btcInput.value) || 1);
+                    currentPrice = price;
+                    updateRates(parseFloat(baseInput.value) || 1);
 
                     const now = Date.now();
                     if (now - lastAppendTs > 2500) {
@@ -255,23 +338,25 @@
         ws.onerror = () => ws.close();
     }
 
-    function updateRates(btcValue) {
-        if (!Number.isFinite(btcValue) || btcValue <= 0) {
+    function updateRates(amount) {
+        if (!Number.isFinite(amount) || amount <= 0 || !currentPrice) {
             usdInput.value = '';
             return;
         }
-        usdInput.value = (btcValue * btcToUsd).toLocaleString('en-US', {
+        usdInput.value = (amount * currentPrice).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
     }
 
-    btcInput.addEventListener('input', (e) => updateRates(parseFloat(e.target.value)));
+    baseInput.addEventListener('input', (e) => updateRates(parseFloat(e.target.value)));
 
+    // ========== Charts ==========
     async function fetchKlines(interval, limit) {
-        const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`;
+        const conf = SYMBOLS[currentSymbol];
+        const url = `${conf.restBase}klines?symbol=${currentSymbol}&interval=${interval}&limit=${limit}`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Binance API error');
+        if (!res.ok) throw new Error('API error');
         const data = await res.json();
         return data.map(k => [k[0], parseFloat(k[4])]);
     }
@@ -279,18 +364,18 @@
     async function loadCharts() {
         const t = i18n[currentLang];
         try {
-            const klines1h = await fetchKlines('1m', 60);
-            prices1h = klines1h;
+            const k1h = await fetchKlines('1m', 60);
+            prices1h = k1h;
             renderChart('1h', prices1h, 1);
 
-            const klines24h = await fetchKlines('5m', 288);
-            renderChart('24h', klines24h, 1);
+            const k24h = await fetchKlines('5m', 288);
+            renderChart('24h', k24h, 1);
 
-            const klines3d = await fetchKlines('15m', 288);
-            renderChart('3d', klines3d, 3);
+            const k3d = await fetchKlines('15m', 288);
+            renderChart('3d', k3d, 3);
 
-            const klines7d = await fetchKlines('1h', 168);
-            renderChart('7d', klines7d, 7);
+            const k7d = await fetchKlines('1h', 168);
+            renderChart('7d', k7d, 7);
         } catch (err) {
             console.error(err);
             document.querySelectorAll('.loading').forEach(el => {
@@ -321,6 +406,7 @@
     function renderChart(id, prices, days) {
         const loadingEl = document.getElementById(`loading-${id}`);
         const canvas = document.getElementById(`chart-${id}`);
+        const color = SYMBOLS[currentSymbol].color;
 
         if (!prices || prices.length < 2) {
             loadingEl.textContent = i18n[currentLang].loadFail;
@@ -337,6 +423,7 @@
         if (chartInstances[id]) {
             chartInstances[id].data.labels = labels;
             chartInstances[id].data.datasets[0].data = values;
+            chartInstances[id].data.datasets[0].borderColor = color;
             chartInstances[id].update('none');
             return;
         }
@@ -346,9 +433,9 @@
             data: {
                 labels,
                 datasets: [{
-                    label: 'BTC/USD',
+                    label: currentSymbol,
                     data: values,
-                    borderColor: '#f7931a',
+                    borderColor: color,
                     borderWidth: 2,
                     pointRadius: 0,
                     hoverRadius: 4,
@@ -364,12 +451,12 @@
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { maxTicksLimit: 6, color: '#999', maxRotation: 0 }
+                        ticks: { maxTicksLimit: 6, color: '#666', maxRotation: 0 }
                     },
                     y: {
-                        grid: { color: '#f0f0f0' },
+                        grid: { color: '#2a2a2a' },
                         ticks: {
-                            color: '#999',
+                            color: '#666',
                             callback: v => Number(v).toLocaleString('en-US')
                         }
                     }
@@ -378,10 +465,13 @@
         });
     }
 
-    // Init
+    // ========== Init ==========
+    document.getElementById('btn-btc').classList.toggle('active', currentSymbol === 'BTCUSDT');
+    document.getElementById('btn-xau').classList.toggle('active', currentSymbol === 'XAUUSDT');
+
     applyLang(currentLang);
-    loadCharts();
     connectWebSocket();
+    loadCharts();
 </script>
 </body>
 </html>
