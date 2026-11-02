@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>極簡比特幣匯率與價格曲線</title>
+    <title>BTC Live Rate & Charts</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -32,13 +32,38 @@
             width: 100%;
             max-width: 480px;
             box-sizing: border-box;
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
         }
         h2 {
-            margin-top: 0;
+            margin: 0;
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 24px;
-            text-align: center;
+            text-align: left;
+            flex: 1;
+        }
+        .lang-btn {
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+        .lang-btn:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
         }
         .input-group {
             display: flex;
@@ -73,6 +98,7 @@
             border-radius: 50%;
             margin-left: 6px;
             animation: pulse 1.5s infinite;
+            vertical-align: middle;
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -101,62 +127,121 @@
 </head>
 <body>
 <div class="container">
-    <h2>即時匯率換算 <span class="live-dot" title="即時更新中"></span></h2>
+    <div class="header">
+        <h2 id="title">即時匯率換算 <span class="live-dot" title="Live"></span></h2>
+        <button class="lang-btn" id="lang-btn" title="Switch language">🌐</button>
+    </div>
+
     <div class="input-group">
         <span class="currency-label">BTC</span>
-        <input type="number" id="btc-input" placeholder="1" step="any" min="0" value="1" aria-label="比特幣數量">
+        <input type="number" id="btc-input" placeholder="1" step="any" min="0" value="1" aria-label="BTC amount">
     </div>
     <div class="input-group">
         <span class="currency-label">USD</span>
-        <input type="text" id="usd-input" readonly placeholder="連線中..." aria-label="美元金額">
+        <input type="text" id="usd-input" readonly placeholder="Connecting..." aria-label="USD amount">
     </div>
 
-    <div class="chart-title">比特幣最近 1 小時價格曲線 (USD)</div>
+    <div class="chart-title" id="label-1h">比特幣最近 1 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-1h" class="loading">載入中...</div>
-        <canvas id="chart-1h" style="display:none;" aria-label="比特幣最近1小時價格曲線"></canvas>
+        <canvas id="chart-1h" style="display:none;" aria-label="BTC 1H chart"></canvas>
     </div>
 
-    <div class="chart-title">比特幣最近 24 小時價格曲線 (USD)</div>
+    <div class="chart-title" id="label-24h">比特幣最近 24 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-24h" class="loading">載入中...</div>
-        <canvas id="chart-24h" style="display:none;" aria-label="比特幣最近24小時價格曲線"></canvas>
+        <canvas id="chart-24h" style="display:none;" aria-label="BTC 24H chart"></canvas>
     </div>
 
-    <div class="chart-title">比特幣最近 3 天價格曲線 (USD)</div>
+    <div class="chart-title" id="label-3d">比特幣最近 3 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-3d" class="loading">載入中...</div>
-        <canvas id="chart-3d" style="display:none;" aria-label="比特幣最近3天價格曲線"></canvas>
+        <canvas id="chart-3d" style="display:none;" aria-label="BTC 3D chart"></canvas>
     </div>
 
-    <div class="chart-title">比特幣最近 7 天價格曲線 (USD)</div>
+    <div class="chart-title" id="label-7d">比特幣最近 7 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-7d" class="loading">載入中...</div>
-        <canvas id="chart-7d" style="display:none;" aria-label="比特幣最近7天價格曲線"></canvas>
+        <canvas id="chart-7d" style="display:none;" aria-label="BTC 7D chart"></canvas>
     </div>
 </div>
 <script>
+    // ========== i18n ==========
+    const i18n = {
+        zh: {
+            title: '即時匯率換算',
+            label1h: '比特幣最近 1 小時價格曲線 (USD)',
+            label24h: '比特幣最近 24 小時價格曲線 (USD)',
+            label3d: '比特幣最近 3 天價格曲線 (USD)',
+            label7d: '比特幣最近 7 天價格曲線 (USD)',
+            loading: '載入中...',
+            loadFail: '載入失敗，請稍後重試',
+            connecting: '連線中...'
+        },
+        en: {
+            title: 'Live Exchange Rate',
+            label1h: 'BTC Last 1 Hour Price Chart (USD)',
+            label24h: 'BTC Last 24 Hours Price Chart (USD)',
+            label3d: 'BTC Last 3 Days Price Chart (USD)',
+            label7d: 'BTC Last 7 Days Price Chart (USD)',
+            loading: 'Loading...',
+            loadFail: 'Failed to load, please try again later',
+            connecting: 'Connecting...'
+        }
+    };
+
+    let currentLang = localStorage.getItem('btc_lang') || 'zh';
+
+    function applyLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('btc_lang', lang);
+        document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+
+        const t = i18n[lang];
+        document.getElementById('title').innerHTML = t.title + ' <span class="live-dot" title="Live"></span>';
+        document.getElementById('label-1h').textContent = t.label1h;
+        document.getElementById('label-24h').textContent = t.label24h;
+        document.getElementById('label-3d').textContent = t.label3d;
+        document.getElementById('label-7d').textContent = t.label7d;
+
+        // Update loading texts if still visible
+        ['1h', '24h', '3d', '7d'].forEach(id => {
+            const el = document.getElementById(`loading-${id}`);
+            if (el && el.style.display !== 'none') {
+                el.textContent = t.loading;
+            }
+        });
+
+        const usdInput = document.getElementById('usd-input');
+        if (usdInput.value === '' || usdInput.placeholder.includes('連') || usdInput.placeholder.includes('Connect')) {
+            usdInput.placeholder = t.connecting;
+        }
+    }
+
+    document.getElementById('lang-btn').addEventListener('click', () => {
+        applyLang(currentLang === 'zh' ? 'en' : 'zh');
+    });
+
+    // ========== Price & Charts ==========
     let btcToUsd = 0;
     const chartInstances = {};
-    let prices1h = [];          // 1小時資料點 [[ts, price], ...]
+    let prices1h = [];
     let lastAppendTs = 0;
 
     const btcInput = document.getElementById('btc-input');
     const usdInput = document.getElementById('usd-input');
 
-    // ========== 即時價格（Binance WebSocket，近乎每秒） ==========
     function connectWebSocket() {
         const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
 
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                const price = parseFloat(data.p);   // 最新成交價
+                const price = parseFloat(data.p);
                 if (price > 0) {
                     btcToUsd = price;
                     updateRates(parseFloat(btcInput.value) || 1);
 
-                    // 每 2~3 秒把最新價格加入 1 小時曲線
                     const now = Date.now();
                     if (now - lastAppendTs > 2500) {
                         lastAppendTs = now;
@@ -166,14 +251,8 @@
             } catch (e) {}
         };
 
-        ws.onclose = () => {
-            // 斷線後 3 秒重連
-            setTimeout(connectWebSocket, 3000);
-        };
-
-        ws.onerror = () => {
-            ws.close();
-        };
+        ws.onclose = () => setTimeout(connectWebSocket, 3000);
+        ws.onerror = () => ws.close();
     }
 
     function updateRates(btcValue) {
@@ -187,65 +266,45 @@
         });
     }
 
-    btcInput.addEventListener('input', (e) => {
-        updateRates(parseFloat(e.target.value));
-    });
+    btcInput.addEventListener('input', (e) => updateRates(parseFloat(e.target.value)));
 
-    // ========== 歷史資料（Binance REST） ==========
     async function fetchKlines(interval, limit) {
         const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Binance API 錯誤');
+        if (!res.ok) throw new Error('Binance API error');
         const data = await res.json();
-        // 回傳 [[openTime, closePrice], ...]
         return data.map(k => [k[0], parseFloat(k[4])]);
     }
 
     async function loadCharts() {
+        const t = i18n[currentLang];
         try {
-            // 1 小時：1 分鐘 K 線 × 60
             const klines1h = await fetchKlines('1m', 60);
             prices1h = klines1h;
             renderChart('1h', prices1h, 1);
 
-            // 24 小時：5 分鐘 K 線 × 288（約一天）
             const klines24h = await fetchKlines('5m', 288);
             renderChart('24h', klines24h, 1);
 
-            // 3 天：15 分鐘 K 線
             const klines3d = await fetchKlines('15m', 288);
             renderChart('3d', klines3d, 3);
 
-            // 7 天：1 小時 K 線
             const klines7d = await fetchKlines('1h', 168);
             renderChart('7d', klines7d, 7);
-
         } catch (err) {
             console.error(err);
             document.querySelectorAll('.loading').forEach(el => {
-                if (el.style.display !== 'none') {
-                    el.innerText = '載入失敗，請稍後重試';
-                }
+                if (el.style.display !== 'none') el.textContent = t.loadFail;
             });
         }
     }
 
-    // 把最新價格加入 1 小時曲線並重繪
     function appendTo1hChart(ts, price) {
         if (!prices1h.length) return;
-
-        // 超過 1 小時的點丟掉
         const oneHourAgo = Date.now() - 60 * 60 * 1000;
         prices1h = prices1h.filter(([t]) => t >= oneHourAgo);
-
-        // 加入最新點
         prices1h.push([ts, price]);
-
-        // 限制最多 120 個點，避免太多
-        if (prices1h.length > 120) {
-            prices1h = prices1h.slice(-120);
-        }
-
+        if (prices1h.length > 120) prices1h = prices1h.slice(-120);
         renderChart('1h', prices1h, 1);
     }
 
@@ -264,7 +323,7 @@
         const canvas = document.getElementById(`chart-${id}`);
 
         if (!prices || prices.length < 2) {
-            loadingEl.innerText = '資料不足';
+            loadingEl.textContent = i18n[currentLang].loadFail;
             return;
         }
 
@@ -276,7 +335,6 @@
         const ctx = canvas.getContext('2d');
 
         if (chartInstances[id]) {
-            // 更新既有圖表（較順暢）
             chartInstances[id].data.labels = labels;
             chartInstances[id].data.datasets[0].data = values;
             chartInstances[id].update('none');
@@ -320,7 +378,8 @@
         });
     }
 
-    // 啟動
+    // Init
+    applyLang(currentLang);
     loadCharts();
     connectWebSocket();
 </script>
