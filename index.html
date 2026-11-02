@@ -136,7 +136,6 @@
             font-size: 13px;
             padding: 20px 0;
         }
-        /* 全透明提示框 */
         .crosshair-tip {
             position: absolute;
             background: transparent;
@@ -244,6 +243,8 @@
     let ws = null;
     const chartInstances = {};
     const chartData = {};
+    // 記錄每個圖表目前選中的時間戳（而不是 index）
+    const selectedTs = {};
 
     const baseInput = document.getElementById('base-input');
     const usdInput = document.getElementById('usd-input');
@@ -328,6 +329,7 @@
         Object.keys(chartInstances).forEach(id => {
             chartInstances[id].destroy();
             delete chartInstances[id];
+            delete selectedTs[id];
             document.getElementById(`chart-${id}`).style.display = 'none';
             document.getElementById(`loading-${id}`).style.display = 'block';
             document.getElementById(`loading-${id}`).textContent = i18n[currentLang].loading;
@@ -468,9 +470,63 @@
         }
     };
 
+    // 根據選中的 timestamp 重新定位十字準線與標籤
+    function repositionCrosshair(id) {
+        const chart = chartInstances[id];
+        const tip = document.getElementById(`tip-${id}`);
+        const prices = chartData[id];
+        const ts = selectedTs[id];
+
+        if (!chart || !prices || ts == null) {
+            if (tip) tip.style.display = 'none';
+            if (chart) chart.$crosshair = null;
+            return;
+        }
+
+        // 找最接近的 timestamp
+        let nearest = -1;
+        let minDiff = Infinity;
+        prices.forEach((p, i) => {
+            const diff = Math.abs(p[0] - ts);
+            if (diff < minDiff) {
+                minDiff = diff;
+                nearest = i;
+            }
+        });
+
+        // 如果時間差太大（超過 3 分鐘），代表該點已移出畫面，清除
+        if (nearest < 0 || minDiff > 3 * 60 * 1000) {
+            selectedTs[id] = null;
+            chart.$crosshair = null;
+            tip.style.display = 'none';
+            chart.draw();
+            return;
+        }
+
+        chart.$crosshair = { index: nearest };
+        chart.draw();
+
+        const [selTs, price] = prices[nearest];
+        tip.innerHTML = `<div class="price">${price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                         <div class="time">${formatFullTime(selTs)}</div>`;
+        tip.style.display = 'block';
+
+        const meta = chart.getDatasetMeta(0);
+        const pt = meta.data[nearest];
+        if (!pt) return;
+
+        const canvas = document.getElementById(`chart-${id}`);
+        const rect = canvas.getBoundingClientRect();
+        let tipX = pt.x + 12;
+        let tipY = pt.y - 40;
+        if (tipX + tip.offsetWidth > rect.width) tipX = pt.x - tip.offsetWidth - 12;
+        if (tipY < 0) tipY = pt.y + 12;
+        tip.style.left = tipX + 'px';
+        tip.style.top = tipY + 'px';
+    }
+
     function setupCrosshair(id) {
         const canvas = document.getElementById(`chart-${id}`);
-        const tip = document.getElementById(`tip-${id}`);
         let isDragging = false;
 
         function handlePointer(e) {
@@ -489,23 +545,13 @@
                 if (dist < minDist) { minDist = dist; nearest = i; }
             });
 
-            chart.$crosshair = { index: nearest };
-            chart.draw();
-
+            // 記錄選中的 timestamp
             const prices = chartData[id];
-            if (!prices || !prices[nearest]) return;
-            const [ts, price] = prices[nearest];
-            tip.innerHTML = `<div class="price">${price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-                             <div class="time">${formatFullTime(ts)}</div>`;
-            tip.style.display = 'block';
+            if (prices && prices[nearest]) {
+                selectedTs[id] = prices[nearest][0];
+            }
 
-            const pt = points[nearest];
-            let tipX = pt.x + 12;
-            let tipY = pt.y - 40;
-            if (tipX + tip.offsetWidth > rect.width) tipX = pt.x - tip.offsetWidth - 12;
-            if (tipY < 0) tipY = pt.y + 12;
-            tip.style.left = tipX + 'px';
-            tip.style.top = tipY + 'px';
+            repositionCrosshair(id);
         }
 
         canvas.addEventListener('mousedown', e => { isDragging = true; handlePointer(e); });
@@ -548,6 +594,8 @@
             chartInstances[id].data.datasets[0].data = values;
             chartInstances[id].data.datasets[0].borderColor = color;
             chartInstances[id].update('none');
+            // 資料更新後，重新定位十字準線
+            repositionCrosshair(id);
             return;
         }
 
