@@ -98,28 +98,24 @@
         <input type="text" id="usd-input" readonly placeholder="計算中..." aria-label="美元金額">
     </div>
 
-    <!-- 1小時 -->
     <div class="chart-title">比特幣最近 1 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-1h" class="loading">載入中...</div>
         <canvas id="chart-1h" style="display:none;" aria-label="比特幣最近1小時價格曲線"></canvas>
     </div>
 
-    <!-- 24小時 -->
     <div class="chart-title">比特幣最近 24 小時價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-24h" class="loading">載入中...</div>
         <canvas id="chart-24h" style="display:none;" aria-label="比特幣最近24小時價格曲線"></canvas>
     </div>
 
-    <!-- 3天 -->
     <div class="chart-title">比特幣最近 3 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-3d" class="loading">載入中...</div>
         <canvas id="chart-3d" style="display:none;" aria-label="比特幣最近3天價格曲線"></canvas>
     </div>
 
-    <!-- 7天 -->
     <div class="chart-title">比特幣最近 7 天價格曲線 (USD)</div>
     <div class="chart-container">
         <div id="loading-7d" class="loading">載入中...</div>
@@ -130,9 +126,10 @@
     let btcToUsd = 0;
     const chartInstances = {};
 
-    // 快取時間設定
-    const PRICE_TTL  = 60 * 1000;         // 匯率：1 分鐘
-    const CHART_TTL  = 60 * 60 * 1000;    // 所有曲線：1 小時
+    // 快取時間
+    const PRICE_TTL     = 60 * 1000;          // 匯率 1 分鐘
+    const CHART_1H_TTL  = 5 * 60 * 1000;      // 1小時曲線來源：5 分鐘（較常更新）
+    const LONG_TTL      = 60 * 60 * 1000;     // 24h / 3d / 7d：1 小時
 
     const btcInput = document.getElementById('btc-input');
     const usdInput = document.getElementById('usd-input');
@@ -141,8 +138,8 @@
         try {
             const raw = localStorage.getItem(key);
             if (!raw) return null;
-            const { ts, data } = JSON.parse(raw);
-            return { ts, data };
+            const parsed = JSON.parse(raw);
+            return parsed;
         } catch {
             return null;
         }
@@ -169,7 +166,7 @@
 
     async function initData() {
         try {
-            // 1. 即時匯率（短快取）
+            // 1. 即時匯率
             let priceCache = getCache('btc_price_usd');
             let rateData;
             if (isFresh(priceCache, PRICE_TTL)) {
@@ -182,13 +179,13 @@
             btcInput.value = 1;
             updateRates(1);
 
-            // 2. 1小時 + 24小時（共用 days=1，超過1小時才重抓）
+            // 2. 1小時曲線（5分鐘快取）+ 24小時曲線（1小時快取）
             await load1hAnd24h();
 
-            // 3. 3天（超過1小時才重抓，否則直接用快取）
+            // 3. 3天（1小時快取）
             await loadLongChart('3d', 3);
 
-            // 4. 7天（超過1小時才重抓，否則直接用快取）
+            // 4. 7天（1小時快取）
             await loadLongChart('7d', 7);
 
         } catch (error) {
@@ -202,46 +199,88 @@
     }
 
     async function load1hAnd24h() {
-        const cacheKey = 'btc_chart_1d';
-        let cache = getCache(cacheKey);
-        let prices;
+        const cacheKey1h = 'btc_chart_1h_source';   // 給1小時用的（5分鐘）
+        const cacheKey24h = 'btc_chart_24h';         // 給24小時用的（1小時）
 
-        if (isFresh(cache, CHART_TTL)) {
-            // 快取仍在1小時內 → 直接使用，不打 API
-            prices = cache.data.prices;
+        let pricesFor1h = null;
+        let pricesFor24h = null;
+
+        // --- 1小時來源（較常更新）---
+        let cache1h = getCache(cacheKey1h);
+        if (isFresh(cache1h, CHART_1H_TTL)) {
+            pricesFor1h = cache1h.data.prices;
         } else {
-            // 超過1小時才重新抓取
-            const data = await fetchJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1');
-            setCache(cacheKey, data);
-            prices = data.prices;
+            try {
+                const data = await fetchJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1');
+                setCache(cacheKey1h, data);
+                // 同時也更新24小時快取
+                setCache(cacheKey24h, data);
+                pricesFor1h = data.prices;
+                pricesFor24h = data.prices;
+            } catch (err) {
+                if (cache1h) pricesFor1h = cache1h.data.prices;
+                else throw err;
+            }
         }
 
-        // 渲染 1 小時（從同一筆資料篩選最近 60 分鐘）
-        const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        const prices1h = prices.filter(([ts]) => ts >= oneHourAgo);
-        renderChart('1h', prices1h.length >= 2 ? prices1h : prices.slice(-12), 1);
+        // --- 24小時（較長快取）---
+        if (!pricesFor24h) {
+            let cache24h = getCache(cacheKey24h);
+            if (isFresh(cache24h, LONG_TTL)) {
+                pricesFor24h = cache24h.data.prices;
+            } else if (pricesFor1h) {
+                // 如果剛剛有抓到1小時的資料，就順便用
+                pricesFor24h = pricesFor1h;
+                setCache(cacheKey24h, { prices: pricesFor1h });
+            } else {
+                // 最後才獨立抓
+                try {
+                    const data = await fetchJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1');
+                    setCache(cacheKey24h, data);
+                    pricesFor24h = data.prices;
+                } catch (err) {
+                    if (cache24h) pricesFor24h = cache24h.data.prices;
+                }
+            }
+        }
 
-        // 渲染 24 小時（同一筆資料）
-        renderChart('24h', prices, 1);
+        // 渲染 1 小時：篩選最近60分鐘 + 把即時價格補到最後
+        if (pricesFor1h) {
+            const oneHourAgo = Date.now() - 60 * 60 * 1000;
+            let prices1h = pricesFor1h.filter(([ts]) => ts >= oneHourAgo);
+            if (prices1h.length < 2) prices1h = pricesFor1h.slice(-15);
+
+            // 補上目前即時價格，讓曲線終點與上方數字一致
+            if (btcToUsd > 0) {
+                prices1h = [...prices1h, [Date.now(), btcToUsd]];
+            }
+            renderChart('1h', prices1h, 1);
+        } else {
+            document.getElementById('loading-1h').innerText = '載入失敗';
+        }
+
+        // 渲染 24 小時
+        if (pricesFor24h) {
+            renderChart('24h', pricesFor24h, 1);
+        } else {
+            document.getElementById('loading-24h').innerText = '載入失敗';
+        }
     }
 
     async function loadLongChart(id, days) {
         const cacheKey = `btc_chart_${days}d`;
         let cache = getCache(cacheKey);
 
-        if (isFresh(cache, CHART_TTL)) {
-            // 直接用快取，不打 API
+        if (isFresh(cache, LONG_TTL)) {
             renderChart(id, cache.data.prices, days);
             return;
         }
 
-        // 超過1小時才重新抓取
         try {
             const data = await fetchJson(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}`);
             setCache(cacheKey, data);
             renderChart(id, data.prices, days);
         } catch (err) {
-            // 失敗時若有舊快取就繼續用
             if (cache) {
                 renderChart(id, cache.data.prices, days);
             } else {
