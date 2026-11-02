@@ -2,100 +2,93 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Live Rate & Charts</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #0f0f0f;
-            --card-color: #1c1c1e;
+            --bg-color: #000000;
+            --card-color: #0a0a0a;
             --text-color: #e8e8e8;
-            --secondary-text: #999;
-            --border-color: #2a2a2a;
-            --input-border: #333;
+            --secondary-text: #888;
+            --border-color: #222;
+            --input-border: #2a2a2a;
         }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            box-sizing: border-box;
         }
         .container {
             background: var(--card-color);
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-            padding: 24px;
+            border-radius: 12px;
+            padding: 20px;
             width: 100%;
             max-width: 480px;
-            box-sizing: border-box;
-            position: relative;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             gap: 8px;
         }
         h2 {
             margin: 0;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
-            text-align: left;
             flex: 1;
             white-space: nowrap;
         }
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
         }
-        .symbol-btn, .lang-btn {
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
+        .symbol-btn, .tz-btn, .lang-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 8px;
-            height: 36px;
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            transition: background 0.2s, border-color 0.2s;
-            padding: 0 10px;
+            padding: 0 8px;
             color: #ccc;
         }
-        .symbol-btn:hover, .lang-btn:hover {
-            background: #333;
-            border-color: #555;
-        }
+        .symbol-btn:hover, .tz-btn:hover, .lang-btn:hover { background: #252525; }
         .symbol-btn.active {
             background: #f7931a;
             border-color: #f7931a;
             color: #fff;
         }
-        .lang-btn {
-            width: 36px;
-            padding: 0;
-            font-size: 18px;
+        .tz-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
         }
+        .lang-btn { width: 34px; padding: 0; font-size: 16px; }
         .input-group {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             border-bottom: 1px solid var(--input-border);
             padding-bottom: 8px;
         }
         .currency-label {
-            width: 70px;
-            font-size: 18px;
+            width: 60px;
+            font-size: 17px;
             font-weight: 600;
             color: #aaa;
         }
@@ -107,14 +100,13 @@
             text-align: right;
             font-weight: 500;
             color: var(--text-color);
-            width: 100%;
             background: transparent;
         }
-        input::placeholder { color: #666; }
+        input::placeholder { color: #555; }
         .live-dot {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             background: #22c55e;
             border-radius: 50%;
             margin-left: 6px;
@@ -123,75 +115,103 @@
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0.35; }
         }
         .chart-title {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--secondary-text);
-            margin-top: 24px;
-            margin-bottom: 8px;
+            margin-top: 22px;
+            margin-bottom: 6px;
             font-weight: 500;
         }
         .chart-container {
             position: relative;
             height: 160px;
             width: 100%;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            touch-action: none;
         }
         .loading {
             text-align: center;
-            color: #666;
-            font-size: 14px;
+            color: #555;
+            font-size: 13px;
             padding: 20px 0;
+        }
+        .crosshair-tip {
+            position: absolute;
+            background: rgba(30,30,30,0.95);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: #eee;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .crosshair-tip .price {
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+        }
+        .crosshair-tip .time {
+            color: #999;
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h2 id="title">即時匯率換算 <span class="live-dot" title="Live"></span></h2>
+        <h2 id="title">即時匯率換算 <span class="live-dot"></span></h2>
         <div class="header-actions">
-            <button class="symbol-btn active" id="btn-btc" data-symbol="BTCUSDT">BTC</button>
-            <button class="symbol-btn" id="btn-xau" data-symbol="XAUUSDT">XAU</button>
-            <button class="lang-btn" id="lang-btn" title="Switch language">🌐</button>
+            <button class="symbol-btn active" id="btn-btc">BTC</button>
+            <button class="symbol-btn" id="btn-xau">XAU</button>
+            <button class="tz-btn active" id="tz-btn" title="Timezone">TPE</button>
+            <button class="lang-btn" id="lang-btn" title="Language">🌐</button>
         </div>
     </div>
 
     <div class="input-group">
         <span class="currency-label" id="base-label">BTC</span>
-        <input type="number" id="base-input" placeholder="1" step="any" min="0" value="1" aria-label="Amount">
+        <input type="number" id="base-input" placeholder="1" step="any" min="0" value="1">
     </div>
     <div class="input-group">
         <span class="currency-label">USD</span>
-        <input type="text" id="usd-input" readonly placeholder="Connecting..." aria-label="USD amount">
+        <input type="text" id="usd-input" readonly placeholder="Connecting...">
     </div>
 
     <div class="chart-title" id="label-1h">最近 1 小時價格曲線 (USD)</div>
-    <div class="chart-container">
+    <div class="chart-container" id="wrap-1h">
         <div id="loading-1h" class="loading">載入中...</div>
         <canvas id="chart-1h" style="display:none;"></canvas>
+        <div class="crosshair-tip" id="tip-1h"></div>
     </div>
 
     <div class="chart-title" id="label-24h">最近 24 小時價格曲線 (USD)</div>
-    <div class="chart-container">
+    <div class="chart-container" id="wrap-24h">
         <div id="loading-24h" class="loading">載入中...</div>
         <canvas id="chart-24h" style="display:none;"></canvas>
+        <div class="crosshair-tip" id="tip-24h"></div>
     </div>
 
     <div class="chart-title" id="label-3d">最近 3 天價格曲線 (USD)</div>
-    <div class="chart-container">
+    <div class="chart-container" id="wrap-3d">
         <div id="loading-3d" class="loading">載入中...</div>
         <canvas id="chart-3d" style="display:none;"></canvas>
+        <div class="crosshair-tip" id="tip-3d"></div>
     </div>
 
     <div class="chart-title" id="label-7d">最近 7 天價格曲線 (USD)</div>
-    <div class="chart-container">
+    <div class="chart-container" id="wrap-7d">
         <div id="loading-7d" class="loading">載入中...</div>
         <canvas id="chart-7d" style="display:none;"></canvas>
+        <div class="crosshair-tip" id="tip-7d"></div>
     </div>
 </div>
 <script>
-    // ========== Config ==========
     const SYMBOLS = {
         BTCUSDT: {
             name: { zh: '比特幣', en: 'Bitcoin' },
@@ -203,44 +223,51 @@
         XAUUSDT: {
             name: { zh: '黃金', en: 'Gold' },
             short: 'XAU',
-            color: '#f0c14b',          // brighter gold for dark background
+            color: '#f0c14b',
             wsBase: 'wss://fstream.binance.com/ws/',
             restBase: 'https://fapi.binance.com/fapi/v1/'
         }
     };
 
+    const TIMEZONES = {
+        TPE: 'Asia/Taipei',
+        NYC: 'America/New_York'
+    };
+
     let currentSymbol = localStorage.getItem('live_symbol') || 'BTCUSDT';
     let currentLang = localStorage.getItem('btc_lang') || 'zh';
+    let currentTz = localStorage.getItem('live_tz') || 'TPE';
     let currentPrice = 0;
     let prices1h = [];
     let lastAppendTs = 0;
     let ws = null;
     const chartInstances = {};
+    const chartData = {};
 
     const baseInput = document.getElementById('base-input');
     const usdInput = document.getElementById('usd-input');
     const baseLabel = document.getElementById('base-label');
+    const tzBtn = document.getElementById('tz-btn');
 
-    // ========== i18n ==========
     const i18n = {
         zh: {
             title: '即時匯率換算',
-            label1h: (s) => `${s} 最近 1 小時價格曲線 (USD)`,
-            label24h: (s) => `${s} 最近 24 小時價格曲線 (USD)`,
-            label3d: (s) => `${s} 最近 3 天價格曲線 (USD)`,
-            label7d: (s) => `${s} 最近 7 天價格曲線 (USD)`,
+            label1h: s => `${s} 最近 1 小時價格曲線 (USD)`,
+            label24h: s => `${s} 最近 24 小時價格曲線 (USD)`,
+            label3d: s => `${s} 最近 3 天價格曲線 (USD)`,
+            label7d: s => `${s} 最近 7 天價格曲線 (USD)`,
             loading: '載入中...',
-            loadFail: '載入失敗，請稍後重試',
+            loadFail: '載入失敗',
             connecting: '連線中...'
         },
         en: {
             title: 'Live Exchange Rate',
-            label1h: (s) => `${s} Last 1 Hour Price Chart (USD)`,
-            label24h: (s) => `${s} Last 24 Hours Price Chart (USD)`,
-            label3d: (s) => `${s} Last 3 Days Price Chart (USD)`,
-            label7d: (s) => `${s} Last 7 Days Price Chart (USD)`,
+            label1h: s => `${s} Last 1 Hour Price Chart (USD)`,
+            label24h: s => `${s} Last 24 Hours Price Chart (USD)`,
+            label3d: s => `${s} Last 3 Days Price Chart (USD)`,
+            label7d: s => `${s} Last 7 Days Price Chart (USD)`,
             loading: 'Loading...',
-            loadFail: 'Failed to load, please try again later',
+            loadFail: 'Failed to load',
             connecting: 'Connecting...'
         }
     };
@@ -252,35 +279,44 @@
         updateTexts();
     }
 
+    function applyTz(tz) {
+        currentTz = tz;
+        localStorage.setItem('live_tz', tz);
+        tzBtn.textContent = tz;
+        tzBtn.classList.toggle('active', true);
+        // Re-render all charts with new timezone labels
+        Object.keys(chartData).forEach(id => {
+            if (chartData[id] && chartInstances[id]) {
+                const days = (id === '3d') ? 3 : (id === '7d') ? 7 : 1;
+                renderChart(id, chartData[id], days);
+            }
+        });
+    }
+
     function updateTexts() {
         const t = i18n[currentLang];
         const conf = SYMBOLS[currentSymbol];
         const name = conf.name[currentLang];
-
-        document.getElementById('title').innerHTML = t.title + ' <span class="live-dot" title="Live"></span>';
+        document.getElementById('title').innerHTML = t.title + ' <span class="live-dot"></span>';
         document.getElementById('label-1h').textContent = t.label1h(name);
         document.getElementById('label-24h').textContent = t.label24h(name);
         document.getElementById('label-3d').textContent = t.label3d(name);
         document.getElementById('label-7d').textContent = t.label7d(name);
         baseLabel.textContent = conf.short;
-
-        ['1h', '24h', '3d', '7d'].forEach(id => {
+        ['1h','24h','3d','7d'].forEach(id => {
             const el = document.getElementById(`loading-${id}`);
             if (el && el.style.display !== 'none') el.textContent = t.loading;
         });
         if (!usdInput.value) usdInput.placeholder = t.connecting;
     }
 
-    document.getElementById('lang-btn').addEventListener('click', () => {
-        applyLang(currentLang === 'zh' ? 'en' : 'zh');
-    });
+    document.getElementById('lang-btn').addEventListener('click', () => applyLang(currentLang === 'zh' ? 'en' : 'zh'));
+    tzBtn.addEventListener('click', () => applyTz(currentTz === 'TPE' ? 'NYC' : 'TPE'));
 
-    // ========== Symbol Switch ==========
     function switchSymbol(symbol) {
         if (symbol === currentSymbol) return;
         currentSymbol = symbol;
         localStorage.setItem('live_symbol', symbol);
-
         document.getElementById('btn-btc').classList.toggle('active', symbol === 'BTCUSDT');
         document.getElementById('btn-xau').classList.toggle('active', symbol === 'XAUUSDT');
 
@@ -296,6 +332,7 @@
             document.getElementById(`chart-${id}`).style.display = 'none';
             document.getElementById(`loading-${id}`).style.display = 'block';
             document.getElementById(`loading-${id}`).textContent = i18n[currentLang].loading;
+            document.getElementById(`tip-${id}`).style.display = 'none';
         });
 
         updateTexts();
@@ -306,17 +343,10 @@
     document.getElementById('btn-btc').addEventListener('click', () => switchSymbol('BTCUSDT'));
     document.getElementById('btn-xau').addEventListener('click', () => switchSymbol('XAUUSDT'));
 
-    // ========== WebSocket ==========
     function connectWebSocket() {
-        if (ws) {
-            ws.onclose = null;
-            ws.close();
-        }
-
+        if (ws) { ws.onclose = null; ws.close(); }
         const conf = SYMBOLS[currentSymbol];
-        const stream = currentSymbol.toLowerCase() + '@trade';
-        ws = new WebSocket(conf.wsBase + stream);
-
+        ws = new WebSocket(conf.wsBase + currentSymbol.toLowerCase() + '@trade');
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
@@ -324,16 +354,14 @@
                 if (price > 0) {
                     currentPrice = price;
                     updateRates(parseFloat(baseInput.value) || 1);
-
                     const now = Date.now();
                     if (now - lastAppendTs > 2500) {
                         lastAppendTs = now;
                         appendTo1hChart(now, price);
                     }
                 }
-            } catch (e) {}
+            } catch(e) {}
         };
-
         ws.onclose = () => setTimeout(connectWebSocket, 3000);
         ws.onerror = () => ws.close();
     }
@@ -344,14 +372,11 @@
             return;
         }
         usdInput.value = (amount * currentPrice).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: 2, maximumFractionDigits: 2
         });
     }
+    baseInput.addEventListener('input', e => updateRates(parseFloat(e.target.value)));
 
-    baseInput.addEventListener('input', (e) => updateRates(parseFloat(e.target.value)));
-
-    // ========== Charts ==========
     async function fetchKlines(interval, limit) {
         const conf = SYMBOLS[currentSymbol];
         const url = `${conf.restBase}klines?symbol=${currentSymbol}&interval=${interval}&limit=${limit}`;
@@ -393,14 +418,114 @@
         renderChart('1h', prices1h, 1);
     }
 
+    function getDateInTz(timestamp) {
+        return new Date(new Date(timestamp).toLocaleString('en-US', { timeZone: TIMEZONES[currentTz] }));
+    }
+
     function formatLabel(timestamp, days) {
-        const date = new Date(timestamp);
+        const date = getDateInTz(timestamp);
         if (days <= 1) {
-            return date.getHours().toString().padStart(2, '0') + ':' +
-                   date.getMinutes().toString().padStart(2, '0');
+            return date.getHours().toString().padStart(2,'0') + ':' +
+                   date.getMinutes().toString().padStart(2,'0');
         }
-        return (date.getMonth() + 1) + '/' + date.getDate() + ' ' +
-               date.getHours().toString().padStart(2, '0') + ':00';
+        return (date.getMonth()+1) + '/' + date.getDate() + ' ' +
+               date.getHours().toString().padStart(2,'0') + ':00';
+    }
+
+    function formatFullTime(ts) {
+        const d = getDateInTz(ts);
+        const tzLabel = currentTz;
+        return d.getFullYear() + '/' +
+               (d.getMonth()+1).toString().padStart(2,'0') + '/' +
+               d.getDate().toString().padStart(2,'0') + ' ' +
+               d.getHours().toString().padStart(2,'0') + ':' +
+               d.getMinutes().toString().padStart(2,'0') +
+               ' (' + tzLabel + ')';
+    }
+
+    // ========== Crosshair Plugin ==========
+    const crosshairPlugin = {
+        id: 'crosshair',
+        afterDraw(chart) {
+            const state = chart.$crosshair;
+            if (!state || state.index == null) return;
+            const { ctx, chartArea } = chart;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta.data[state.index]) return;
+            const pt = meta.data[state.index];
+            const x = pt.x;
+            const y = pt.y;
+            ctx.save();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
+    function setupCrosshair(id) {
+        const canvas = document.getElementById(`chart-${id}`);
+        const tip = document.getElementById(`tip-${id}`);
+        let isDragging = false;
+
+        function handlePointer(e) {
+            const chart = chartInstances[id];
+            if (!chart) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const x = clientX - rect.left;
+            const points = chart.getDatasetMeta(0).data;
+            if (!points.length) return;
+
+            let nearest = 0;
+            let minDist = Infinity;
+            points.forEach((p, i) => {
+                const dist = Math.abs(p.x - x);
+                if (dist < minDist) { minDist = dist; nearest = i; }
+            });
+
+            chart.$crosshair = { index: nearest };
+            chart.draw();
+
+            const prices = chartData[id];
+            if (!prices || !prices[nearest]) return;
+            const [ts, price] = prices[nearest];
+            tip.innerHTML = `<div class="price">${price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                             <div class="time">${formatFullTime(ts)}</div>`;
+            tip.style.display = 'block';
+
+            const pt = points[nearest];
+            let tipX = pt.x + 12;
+            let tipY = pt.y - 40;
+            if (tipX + tip.offsetWidth > rect.width) tipX = pt.x - tip.offsetWidth - 12;
+            if (tipY < 0) tipY = pt.y + 12;
+            tip.style.left = tipX + 'px';
+            tip.style.top = tipY + 'px';
+        }
+
+        canvas.addEventListener('mousedown', e => { isDragging = true; handlePointer(e); });
+        canvas.addEventListener('mousemove', e => { if (isDragging) handlePointer(e); });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            isDragging = true;
+            handlePointer(e);
+        }, { passive: false });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (isDragging) handlePointer(e);
+        }, { passive: false });
+        canvas.addEventListener('touchend', () => { isDragging = false; });
+        canvas.addEventListener('click', handlePointer);
     }
 
     function renderChart(id, prices, days) {
@@ -415,6 +540,7 @@
 
         loadingEl.style.display = 'none';
         canvas.style.display = 'block';
+        chartData[id] = prices;
 
         const labels = prices.map(([ts]) => formatLabel(ts, days));
         const values = prices.map(([, price]) => price);
@@ -438,7 +564,7 @@
                     borderColor: color,
                     borderWidth: 2,
                     pointRadius: 0,
-                    hoverRadius: 4,
+                    hoverRadius: 0,
                     fill: false,
                     tension: 0.1
                 }]
@@ -447,28 +573,35 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: false,
-                plugins: { legend: { display: false } },
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { maxTicksLimit: 6, color: '#666', maxRotation: 0 }
+                        ticks: { maxTicksLimit: 6, color: '#555', maxRotation: 0 }
                     },
                     y: {
-                        grid: { color: '#2a2a2a' },
+                        grid: { color: '#1a1a1a' },
                         ticks: {
-                            color: '#666',
+                            color: '#555',
                             callback: v => Number(v).toLocaleString('en-US')
                         }
                     }
                 }
-            }
+            },
+            plugins: [crosshairPlugin]
         });
+
+        setupCrosshair(id);
     }
 
-    // ========== Init ==========
+    // Init
     document.getElementById('btn-btc').classList.toggle('active', currentSymbol === 'BTCUSDT');
     document.getElementById('btn-xau').classList.toggle('active', currentSymbol === 'XAUUSDT');
-
+    tzBtn.textContent = currentTz;
     applyLang(currentLang);
     connectWebSocket();
     loadCharts();
