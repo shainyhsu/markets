@@ -65,6 +65,19 @@
             background: transparent;
         }
         input::placeholder { color: #ccc; }
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            margin-left: 6px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
         .chart-title {
             font-size: 14px;
             color: #666;
@@ -88,14 +101,14 @@
 </head>
 <body>
 <div class="container">
-    <h2>即時匯率換算</h2>
+    <h2>即時匯率換算 <span class="live-dot" title="即時更新中"></span></h2>
     <div class="input-group">
         <span class="currency-label">BTC</span>
-        <input type="number" id="btc-input" placeholder="1" step="any" min="0" aria-label="比特幣數量">
+        <input type="number" id="btc-input" placeholder="1" step="any" min="0" value="1" aria-label="比特幣數量">
     </div>
     <div class="input-group">
         <span class="currency-label">USD</span>
-        <input type="text" id="usd-input" readonly placeholder="計算中..." aria-label="美元金額">
+        <input type="text" id="usd-input" readonly placeholder="連線中..." aria-label="美元金額">
     </div>
 
     <div class="chart-title">比特幣最近 1 小時價格曲線 (USD)</div>
@@ -125,168 +138,42 @@
 <script>
     let btcToUsd = 0;
     const chartInstances = {};
-
-    // 快取時間
-    const PRICE_TTL     = 60 * 1000;          // 匯率 1 分鐘
-    const CHART_1H_TTL  = 5 * 60 * 1000;      // 1小時曲線來源：5 分鐘（較常更新）
-    const LONG_TTL      = 60 * 60 * 1000;     // 24h / 3d / 7d：1 小時
+    let prices1h = [];          // 1小時資料點 [[ts, price], ...]
+    let lastAppendTs = 0;
 
     const btcInput = document.getElementById('btc-input');
     const usdInput = document.getElementById('usd-input');
 
-    function getCache(key) {
-        try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
-            return parsed;
-        } catch {
-            return null;
-        }
-    }
+    // ========== 即時價格（Binance WebSocket，近乎每秒） ==========
+    function connectWebSocket() {
+        const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
 
-    function setCache(key, data) {
-        try {
-            localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
-        } catch {}
-    }
-
-    function isFresh(cache, ttl) {
-        return cache && (Date.now() - cache.ts < ttl);
-    }
-
-    async function fetchJson(url) {
-        const response = await fetch(url);
-        if (!response.ok) {
-            if (response.status === 429) throw new Error('API 請求過於頻繁，請稍後再試');
-            throw new Error(`API 錯誤 ${response.status}`);
-        }
-        return response.json();
-    }
-
-    async function initData() {
-        try {
-            // 1. 即時匯率
-            let priceCache = getCache('btc_price_usd');
-            let rateData;
-            if (isFresh(priceCache, PRICE_TTL)) {
-                rateData = priceCache.data;
-            } else {
-                rateData = await fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-                setCache('btc_price_usd', rateData);
-            }
-            btcToUsd = rateData.bitcoin.usd;
-            btcInput.value = 1;
-            updateRates(1);
-
-            // 2. 1小時曲線（5分鐘快取）+ 24小時曲線（1小時快取）
-            await load1hAnd24h();
-
-            // 3. 3天（1小時快取）
-            await loadLongChart('3d', 3);
-
-            // 4. 7天（1小時快取）
-            await loadLongChart('7d', 7);
-
-        } catch (error) {
-            console.error(error);
-            document.querySelectorAll('.loading').forEach(el => {
-                if (el.style.display !== 'none') {
-                    el.innerText = error.message || '數據載入失敗';
-                }
-            });
-        }
-    }
-
-    async function load1hAnd24h() {
-        const cacheKey1h = 'btc_chart_1h_source';   // 給1小時用的（5分鐘）
-        const cacheKey24h = 'btc_chart_24h';         // 給24小時用的（1小時）
-
-        let pricesFor1h = null;
-        let pricesFor24h = null;
-
-        // --- 1小時來源（較常更新）---
-        let cache1h = getCache(cacheKey1h);
-        if (isFresh(cache1h, CHART_1H_TTL)) {
-            pricesFor1h = cache1h.data.prices;
-        } else {
+        ws.onmessage = (event) => {
             try {
-                const data = await fetchJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1');
-                setCache(cacheKey1h, data);
-                // 同時也更新24小時快取
-                setCache(cacheKey24h, data);
-                pricesFor1h = data.prices;
-                pricesFor24h = data.prices;
-            } catch (err) {
-                if (cache1h) pricesFor1h = cache1h.data.prices;
-                else throw err;
-            }
-        }
+                const data = JSON.parse(event.data);
+                const price = parseFloat(data.p);   // 最新成交價
+                if (price > 0) {
+                    btcToUsd = price;
+                    updateRates(parseFloat(btcInput.value) || 1);
 
-        // --- 24小時（較長快取）---
-        if (!pricesFor24h) {
-            let cache24h = getCache(cacheKey24h);
-            if (isFresh(cache24h, LONG_TTL)) {
-                pricesFor24h = cache24h.data.prices;
-            } else if (pricesFor1h) {
-                // 如果剛剛有抓到1小時的資料，就順便用
-                pricesFor24h = pricesFor1h;
-                setCache(cacheKey24h, { prices: pricesFor1h });
-            } else {
-                // 最後才獨立抓
-                try {
-                    const data = await fetchJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1');
-                    setCache(cacheKey24h, data);
-                    pricesFor24h = data.prices;
-                } catch (err) {
-                    if (cache24h) pricesFor24h = cache24h.data.prices;
+                    // 每 2~3 秒把最新價格加入 1 小時曲線
+                    const now = Date.now();
+                    if (now - lastAppendTs > 2500) {
+                        lastAppendTs = now;
+                        appendTo1hChart(now, price);
+                    }
                 }
-            }
-        }
+            } catch (e) {}
+        };
 
-        // 渲染 1 小時：篩選最近60分鐘 + 把即時價格補到最後
-        if (pricesFor1h) {
-            const oneHourAgo = Date.now() - 60 * 60 * 1000;
-            let prices1h = pricesFor1h.filter(([ts]) => ts >= oneHourAgo);
-            if (prices1h.length < 2) prices1h = pricesFor1h.slice(-15);
+        ws.onclose = () => {
+            // 斷線後 3 秒重連
+            setTimeout(connectWebSocket, 3000);
+        };
 
-            // 補上目前即時價格，讓曲線終點與上方數字一致
-            if (btcToUsd > 0) {
-                prices1h = [...prices1h, [Date.now(), btcToUsd]];
-            }
-            renderChart('1h', prices1h, 1);
-        } else {
-            document.getElementById('loading-1h').innerText = '載入失敗';
-        }
-
-        // 渲染 24 小時
-        if (pricesFor24h) {
-            renderChart('24h', pricesFor24h, 1);
-        } else {
-            document.getElementById('loading-24h').innerText = '載入失敗';
-        }
-    }
-
-    async function loadLongChart(id, days) {
-        const cacheKey = `btc_chart_${days}d`;
-        let cache = getCache(cacheKey);
-
-        if (isFresh(cache, LONG_TTL)) {
-            renderChart(id, cache.data.prices, days);
-            return;
-        }
-
-        try {
-            const data = await fetchJson(`https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}`);
-            setCache(cacheKey, data);
-            renderChart(id, data.prices, days);
-        } catch (err) {
-            if (cache) {
-                renderChart(id, cache.data.prices, days);
-            } else {
-                document.getElementById(`loading-${id}`).innerText = err.message || '載入失敗';
-            }
-        }
+        ws.onerror = () => {
+            ws.close();
+        };
     }
 
     function updateRates(btcValue) {
@@ -295,11 +182,72 @@
             return;
         }
         usdInput.value = (btcValue * btcToUsd).toLocaleString('en-US', {
-            minimumFractionDigits: 2, maximumFractionDigits: 2
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     }
 
-    btcInput.addEventListener('input', (e) => updateRates(parseFloat(e.target.value)));
+    btcInput.addEventListener('input', (e) => {
+        updateRates(parseFloat(e.target.value));
+    });
+
+    // ========== 歷史資料（Binance REST） ==========
+    async function fetchKlines(interval, limit) {
+        const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Binance API 錯誤');
+        const data = await res.json();
+        // 回傳 [[openTime, closePrice], ...]
+        return data.map(k => [k[0], parseFloat(k[4])]);
+    }
+
+    async function loadCharts() {
+        try {
+            // 1 小時：1 分鐘 K 線 × 60
+            const klines1h = await fetchKlines('1m', 60);
+            prices1h = klines1h;
+            renderChart('1h', prices1h, 1);
+
+            // 24 小時：5 分鐘 K 線 × 288（約一天）
+            const klines24h = await fetchKlines('5m', 288);
+            renderChart('24h', klines24h, 1);
+
+            // 3 天：15 分鐘 K 線
+            const klines3d = await fetchKlines('15m', 288);
+            renderChart('3d', klines3d, 3);
+
+            // 7 天：1 小時 K 線
+            const klines7d = await fetchKlines('1h', 168);
+            renderChart('7d', klines7d, 7);
+
+        } catch (err) {
+            console.error(err);
+            document.querySelectorAll('.loading').forEach(el => {
+                if (el.style.display !== 'none') {
+                    el.innerText = '載入失敗，請稍後重試';
+                }
+            });
+        }
+    }
+
+    // 把最新價格加入 1 小時曲線並重繪
+    function appendTo1hChart(ts, price) {
+        if (!prices1h.length) return;
+
+        // 超過 1 小時的點丟掉
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+        prices1h = prices1h.filter(([t]) => t >= oneHourAgo);
+
+        // 加入最新點
+        prices1h.push([ts, price]);
+
+        // 限制最多 120 個點，避免太多
+        if (prices1h.length > 120) {
+            prices1h = prices1h.slice(-120);
+        }
+
+        renderChart('1h', prices1h, 1);
+    }
 
     function formatLabel(timestamp, days) {
         const date = new Date(timestamp);
@@ -327,7 +275,13 @@
         const values = prices.map(([, price]) => price);
         const ctx = canvas.getContext('2d');
 
-        if (chartInstances[id]) chartInstances[id].destroy();
+        if (chartInstances[id]) {
+            // 更新既有圖表（較順暢）
+            chartInstances[id].data.labels = labels;
+            chartInstances[id].data.datasets[0].data = values;
+            chartInstances[id].update('none');
+            return;
+        }
 
         chartInstances[id] = new Chart(ctx, {
             type: 'line',
@@ -347,6 +301,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
                 plugins: { legend: { display: false } },
                 scales: {
                     x: {
@@ -365,7 +320,9 @@
         });
     }
 
-    initData();
+    // 啟動
+    loadCharts();
+    connectWebSocket();
 </script>
 </body>
 </html>
