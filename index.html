@@ -184,6 +184,21 @@
         :root[data-theme="light"] input::placeholder,:root[data-theme="light"] .loading{color:#9a9ea5}
         :root[data-theme="light"] .crosshair-tip,:root[data-theme="light"] .crosshair-tip .price{color:#111;text-shadow:0 0 4px #fff,0 0 6px #fff,0 1px 2px #fff}
         :root[data-theme="light"] .crosshair-tip .time{color:#333;text-shadow:0 0 4px #fff,0 0 6px #fff}
+    
+        /* 寬螢幕：上方匯率兩欄，下方曲線兩欄 */
+        @media (min-width: 960px) {
+            body { padding: 28px 24px; }
+            .container { max-width: 1180px; padding: 28px 32px; }
+            .header { margin-bottom: 24px; }
+            h2 { font-size: 20px; }
+            .rates { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+            .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
+            .chart-container { height: 200px; }
+        }
+        @media (min-width: 1500px) {
+            .container { max-width: 1440px; }
+            .charts { grid-template-columns: repeat(3, 1fr); }
+        }
     </style>
 </head>
 <body>
@@ -200,6 +215,7 @@
         </div>
     </div>
 
+    <div class="rates">
     <div class="input-group">
         <span class="currency-label" id="base-label">BTC</span>
         <input type="number" id="base-input" placeholder="1" step="any" min="0" value="1">
@@ -208,33 +224,73 @@
         <span class="currency-label">USD</span>
         <input type="text" id="usd-input" readonly placeholder="Connecting...">
     </div>
-
-    <div class="chart-title" id="label-1h">最近 1 小時價格曲線 (USD)</div>
-    <div class="chart-container" id="wrap-1h">
-        <div id="loading-1h" class="loading">載入中...</div>
-        <canvas id="chart-1h" style="display:none;"></canvas>
-        <div class="crosshair-tip" id="tip-1h"></div>
     </div>
 
-    <div class="chart-title" id="label-24h">最近 24 小時價格曲線 (USD)</div>
-    <div class="chart-container" id="wrap-24h">
-        <div id="loading-24h" class="loading">載入中...</div>
-        <canvas id="chart-24h" style="display:none;"></canvas>
-        <div class="crosshair-tip" id="tip-24h"></div>
-    </div>
-
-    <div class="chart-title" id="label-3d">最近 3 天價格曲線 (USD)</div>
-    <div class="chart-container" id="wrap-3d">
-        <div id="loading-3d" class="loading">載入中...</div>
-        <canvas id="chart-3d" style="display:none;"></canvas>
-        <div class="crosshair-tip" id="tip-3d"></div>
-    </div>
-
-    <div class="chart-title" id="label-7d">最近 7 天價格曲線 (USD)</div>
-    <div class="chart-container" id="wrap-7d">
-        <div id="loading-7d" class="loading">載入中...</div>
-        <canvas id="chart-7d" style="display:none;"></canvas>
-        <div class="crosshair-tip" id="tip-7d"></div>
+    <div class="charts">
+        <div class="chart-block">
+            <div class="chart-title" id="label-1h">最近 1 小時價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-1h">
+                <div id="loading-1h" class="loading">載入中...</div>
+                <canvas id="chart-1h" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-1h"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-24h">最近 24 小時價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-24h">
+                <div id="loading-24h" class="loading">載入中...</div>
+                <canvas id="chart-24h" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-24h"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-3d">最近 3 天價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-3d">
+                <div id="loading-3d" class="loading">載入中...</div>
+                <canvas id="chart-3d" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-3d"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-7d">最近 7 天價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-7d">
+                <div id="loading-7d" class="loading">載入中...</div>
+                <canvas id="chart-7d" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-7d"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-30d">最近 30 天價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-30d">
+                <div id="loading-30d" class="loading">載入中...</div>
+                <canvas id="chart-30d" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-30d"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-3m">最近 3 個月價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-3m">
+                <div id="loading-3m" class="loading">載入中...</div>
+                <canvas id="chart-3m" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-3m"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-6m">最近 6 個月價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-6m">
+                <div id="loading-6m" class="loading">載入中...</div>
+                <canvas id="chart-6m" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-6m"></div>
+            </div>
+        </div>
+        <div class="chart-block">
+            <div class="chart-title" id="label-1y">最近 1 年價格曲線 (USD)</div>
+            <div class="chart-container" id="wrap-1y">
+                <div id="loading-1y" class="loading">載入中...</div>
+                <canvas id="chart-1y" style="display:none;"></canvas>
+                <div class="crosshair-tip" id="tip-1y"></div>
+            </div>
+        </div>
     </div>
 </div>
 <script>
@@ -267,6 +323,18 @@
     let prices1h = [];
     let lastAppendTs = 0;
     let ws = null;
+    // 每張圖：K 線週期、筆數、涵蓋天數
+    const CHARTS = [
+        { id: '1h',  interval: '1m',  limit: 60,  days: 1 },
+        { id: '24h', interval: '5m',  limit: 288, days: 1 },
+        { id: '3d',  interval: '15m', limit: 288, days: 3 },
+        { id: '7d',  interval: '1h',  limit: 168, days: 7 },
+        { id: '30d', interval: '4h',  limit: 180, days: 30 },
+        { id: '3m',  interval: '12h', limit: 182, days: 91 },
+        { id: '6m',  interval: '1d',  limit: 183, days: 183 },
+        { id: '1y',  interval: '1d',  limit: 365, days: 365 }
+    ];
+    const CHART_DAYS = Object.fromEntries(CHARTS.map(c => [c.id, c.days]));
     const chartInstances = {};
     const chartData = {};
     // 記錄每個圖表目前選中的時間戳（而不是 index）
@@ -284,6 +352,10 @@
             label24h: s => `${s} 最近 24 小時價格曲線 (USD)`,
             label3d: s => `${s} 最近 3 天價格曲線 (USD)`,
             label7d: s => `${s} 最近 7 天價格曲線 (USD)`,
+            label30d: s => `${s} 最近 30 天價格曲線 (USD)`,
+            label3m: s => `${s} 最近 3 個月價格曲線 (USD)`,
+            label6m: s => `${s} 最近 6 個月價格曲線 (USD)`,
+            label1y: s => `${s} 最近 1 年價格曲線 (USD)`,
             loading: '載入中...',
             loadFail: '載入失敗',
             connecting: '連線中...'
@@ -294,6 +366,10 @@
             label24h: s => `${s} Last 24 Hours Price Chart (USD)`,
             label3d: s => `${s} Last 3 Days Price Chart (USD)`,
             label7d: s => `${s} Last 7 Days Price Chart (USD)`,
+            label30d: s => `${s} Last 30 Days Price Chart (USD)`,
+            label3m: s => `${s} Last 3 Months Price Chart (USD)`,
+            label6m: s => `${s} Last 6 Months Price Chart (USD)`,
+            label1y: s => `${s} Last 1 Year Price Chart (USD)`,
             loading: 'Loading...',
             loadFail: 'Failed to load',
             connecting: 'Connecting...'
@@ -313,8 +389,7 @@
         tzBtn.textContent = tz;
         Object.keys(chartData).forEach(id => {
             if (chartData[id] && chartInstances[id]) {
-                const days = (id === '3d') ? 3 : (id === '7d') ? 7 : 1;
-                renderChart(id, chartData[id], days);
+                renderChart(id, chartData[id], CHART_DAYS[id] || 1);
             }
         });
     }
@@ -324,12 +399,11 @@
         const conf = SYMBOLS[currentSymbol];
         const name = conf.name[currentLang];
         document.getElementById('title').innerHTML = t.title + ' <span class="live-dot"></span>';
-        document.getElementById('label-1h').textContent = t.label1h(name);
-        document.getElementById('label-24h').textContent = t.label24h(name);
-        document.getElementById('label-3d').textContent = t.label3d(name);
-        document.getElementById('label-7d').textContent = t.label7d(name);
+        CHARTS.forEach(c => {
+            document.getElementById(`label-${c.id}`).textContent = t[`label${c.id}`](name);
+        });
         baseLabel.textContent = conf.short;
-        ['1h','24h','3d','7d'].forEach(id => {
+        CHARTS.map(c => c.id).forEach(id => {
             const el = document.getElementById(`loading-${id}`);
             if (el && el.style.display !== 'none') el.textContent = t.loading;
         });
@@ -415,24 +489,18 @@
 
     async function loadCharts() {
         const t = i18n[currentLang];
-        try {
-            const k1h = await fetchKlines('1m', 60);
-            prices1h = k1h;
-            renderChart('1h', prices1h, 1);
-
-            const k24h = await fetchKlines('5m', 288);
-            renderChart('24h', k24h, 1);
-
-            const k3d = await fetchKlines('15m', 288);
-            renderChart('3d', k3d, 3);
-
-            const k7d = await fetchKlines('1h', 168);
-            renderChart('7d', k7d, 7);
-        } catch (err) {
-            console.error(err);
-            document.querySelectorAll('.loading').forEach(el => {
-                if (el.style.display !== 'none') el.textContent = t.loadFail;
-            });
+        const sym = currentSymbol;
+        for (const c of CHARTS) {
+            try {
+                const k = await fetchKlines(c.interval, c.limit);
+                if (sym !== currentSymbol) return; // 切換幣種後放棄舊資料
+                if (c.id === '1h') prices1h = k;
+                renderChart(c.id, c.id === '1h' ? prices1h : k, c.days);
+            } catch (err) {
+                console.error(err);
+                const el = document.getElementById(`loading-${c.id}`);
+                if (el && el.style.display !== 'none') el.textContent = t.loadFail;
+            }
         }
     }
 
@@ -454,6 +522,12 @@
         if (days <= 1) {
             return date.getHours().toString().padStart(2,'0') + ':' +
                    date.getMinutes().toString().padStart(2,'0');
+        }
+        if (days >= 365) {
+            return String(date.getFullYear()).slice(2) + '/' + (date.getMonth()+1) + '/' + date.getDate();
+        }
+        if (days >= 30) {
+            return (date.getMonth()+1) + '/' + date.getDate();
         }
         return (date.getMonth()+1) + '/' + date.getDate() + ' ' +
                date.getHours().toString().padStart(2,'0') + ':00';
