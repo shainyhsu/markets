@@ -192,6 +192,9 @@
             .header { margin-bottom: 24px; }
             h2 { font-size: 20px; }
             .rates { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+            /* 左右鏡像：1 小時在右上，1 年在左下 */
+            .rates, .charts { direction: rtl; }
+            .rates > *, .charts > * { direction: ltr; }
             .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
             .chart-container { height: 200px; }
         }
