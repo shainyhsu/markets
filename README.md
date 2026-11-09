@@ -34,6 +34,7 @@ A single-page tool that converts Bitcoin (BTC) and gold (XAU) to US dollars at t
 
 ## Version history
 
+- V14 | 2026-11-09 11:24 | Wide-screen columns mirrored: the 1-hour chart sits top right and the 1-year chart bottom left.
 - V13 | 2026-11-09 10:25 | Corrected the search and link-preview description: USD conversion only, listing all eight chart ranges.
 - V12 | 2026-11-09 10:16 | Added 30-day, 3-month, 6-month and 1-year charts, plus a wide-screen layout with the converter and charts in two columns (four chart columns on very wide screens).
 - V11 | 2026-11-09 09:23 | Added a light/dark theme toggle in the top-right corner (dark by default) and tightened the layout on small phones.
