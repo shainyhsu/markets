@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
+<head><script>(function(){var t="dark";try{t=localStorage.getItem("theme")||"dark"}catch(e){}document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")})()</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTC／黃金即時匯率換算與價格走勢｜USD、TWD</title>
@@ -170,6 +170,20 @@
             font-size: 11px;
             text-shadow: 0 0 4px #000, 0 0 6px #000, 0 1px 2px #000;
         }
+    
+        :root{color-scheme:dark}
+        .theme-btn svg{width:17px;height:17px}
+        @media (max-width:420px){body{padding:8px}.container{padding:16px 14px}.header-actions{gap:4px}.symbol-btn,.tz-btn{padding:0 6px}}
+        @media (max-width:370px){h2{font-size:15px}}
+        :root[data-theme="light"]{color-scheme:light;--bg-color:#eef0f2;--card-color:#ffffff;--text-color:#16181b;--secondary-text:#6b6f75;--input-border:#e2e4e8}
+        :root[data-theme="light"] .symbol-btn,:root[data-theme="light"] .tz-btn,:root[data-theme="light"] .lang-btn{background:#f4f5f7;border-color:#dcdfe4;color:#3a3d42}
+        :root[data-theme="light"] .symbol-btn:hover,:root[data-theme="light"] .tz-btn:hover,:root[data-theme="light"] .lang-btn:hover{background:#e9ebef}
+        :root[data-theme="light"] .symbol-btn.active{background:#f7931a;border-color:#f7931a;color:#fff}
+        :root[data-theme="light"] .tz-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+        :root[data-theme="light"] .currency-label{color:#5b5f66}
+        :root[data-theme="light"] input::placeholder,:root[data-theme="light"] .loading{color:#9a9ea5}
+        :root[data-theme="light"] .crosshair-tip,:root[data-theme="light"] .crosshair-tip .price{color:#111;text-shadow:0 0 4px #fff,0 0 6px #fff,0 1px 2px #fff}
+        :root[data-theme="light"] .crosshair-tip .time{color:#333;text-shadow:0 0 4px #fff,0 0 6px #fff}
     </style>
 </head>
 <body>
@@ -181,6 +195,7 @@
             <button class="symbol-btn active" id="btn-btc">BTC</button>
             <button class="symbol-btn" id="btn-xau">XAU</button>
             <button class="tz-btn active" id="tz-btn" title="Timezone">TPE</button>
+            <button class="lang-btn theme-btn" id="themeToggle" type="button"></button>
             <button class="lang-btn" id="lang-btn" title="Language">🌐</button>
         </div>
     </div>
@@ -640,7 +655,7 @@
                         ticks: { maxTicksLimit: 6, color: '#555', maxRotation: 0 }
                     },
                     y: {
-                        grid: { color: '#1a1a1a' },
+                        grid: { color: gridColor() },
                         ticks: {
                             color: '#555',
                             callback: v => Number(v).toLocaleString('en-US')
@@ -654,6 +669,11 @@
         setupCrosshair(id);
     }
 
+    function gridColor() { return document.documentElement.getAttribute('data-theme') === 'light' ? '#eceef1' : '#1a1a1a'; }
+    window.addEventListener('themechange', () => {
+        Object.values(chartInstances).forEach(c => { if (c && c.options && c.options.scales && c.options.scales.y) { c.options.scales.y.grid.color = gridColor(); c.update('none'); } });
+    });
+
     // Init
     document.getElementById('btn-btc').classList.toggle('active', currentSymbol === 'BTCUSDT');
     document.getElementById('btn-xau').classList.toggle('active', currentSymbol === 'XAUUSDT');
@@ -662,5 +682,6 @@
     connectWebSocket();
     loadCharts();
 </script>
+<script>(function(){var r=document.documentElement,b=document.getElementById("themeToggle");if(!b)return;var SUN='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>',MOON='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';function sync(){var d=r.getAttribute("data-theme")!=="light";b.innerHTML=d?SUN:MOON;var l=d?"切換為淺色模式 / Light mode":"切換為深色模式 / Dark mode";b.title=l;b.setAttribute("aria-label",l)}b.addEventListener("click",function(){var n=r.getAttribute("data-theme")==="light"?"dark":"light";r.setAttribute("data-theme",n);try{localStorage.setItem("theme",n)}catch(e){}sync();try{window.dispatchEvent(new CustomEvent("themechange",{detail:n}))}catch(e){}});sync()})()</script>
 </body>
 </html>
