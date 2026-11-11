@@ -34,6 +34,7 @@ A single-page tool that converts Bitcoin (BTC) and gold (XAU) to US dollars at t
 
 ## Version history
 
+- V16 | 2026-11-11 10:07 | New license terms: free to use in a browser for personal, work, school or club use, and the results you make are yours to share; copying, paid services built on it, and AI training need written permission. A License link sits at the bottom of the page
 - V15 | 2026-11-10 00:18 | Added a link-preview image (1200×630) so shared links show a picture in LINE, Facebook and other apps.
 - V14 | 2026-11-09 11:24 | Wide-screen columns mirrored: the 1-hour chart sits top right and the 1-year chart bottom left.
 - V13 | 2026-11-09 10:25 | Corrected the search and link-preview description: USD conversion only, listing all eight chart ranges.
@@ -52,6 +53,6 @@ A single-page tool that converts Bitcoin (BTC) and gold (XAU) to US dollars at t
 
 ## License
 
-Copyright (c) 2026 Shainy Hsu. **All rights reserved.** See [LICENSE](LICENSE).
+Copyright (c) 2026 Shainy Hsu. All rights reserved. See [LICENSE](LICENSE).
 
 You may use the published website for personal use in a browser. No copying, reproducing, modifying, redistributing, mirroring, scraping, or using any part of this work to train or evaluate AI/machine-learning models without prior written permission from the author.
