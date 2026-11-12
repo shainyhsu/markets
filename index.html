@@ -145,7 +145,10 @@
             height: 160px;
             width: 100%;
             margin-bottom: 2px;
-            touch-action: none;
+            touch-action: pan-y;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
         .loading {
             text-align: center;
@@ -674,17 +677,42 @@
         canvas.addEventListener('mousemove', e => { if (isDragging) handlePointer(e); });
         window.addEventListener('mouseup', () => { isDragging = false; });
 
+        // 手機：按住 0.5 秒不動才選價格；快速點或滑動交給頁面捲動
+        const HOLD_MS = 500, MOVE_TOL = 10;
+        let holdTimer = null, sx = 0, sy = 0, lastTouch = null, lastTouchEnd = 0;
+        const cancelHold = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
         canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            isDragging = true;
-            handlePointer(e);
-        }, { passive: false });
+            if (e.touches.length !== 1) { cancelHold(); isDragging = false; return; }
+            const t = e.touches[0];
+            sx = t.clientX; sy = t.clientY; lastTouch = e;
+            isDragging = false;
+            cancelHold();
+            holdTimer = setTimeout(() => {
+                holdTimer = null;
+                isDragging = true;
+                if (navigator.vibrate) { try { navigator.vibrate(12); } catch (_) {} }
+                handlePointer(lastTouch);
+            }, HOLD_MS);
+        }, { passive: true });
         canvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            if (isDragging) handlePointer(e);
+            lastTouch = e;
+            if (isDragging) {
+                if (e.cancelable) e.preventDefault();
+                handlePointer(e);
+                return;
+            }
+            const t = e.touches[0];
+            if (Math.abs(t.clientX - sx) > MOVE_TOL || Math.abs(t.clientY - sy) > MOVE_TOL) cancelHold();
         }, { passive: false });
-        canvas.addEventListener('touchend', () => { isDragging = false; });
-        canvas.addEventListener('click', handlePointer);
+        const endTouch = () => { cancelHold(); isDragging = false; lastTouchEnd = Date.now(); };
+        canvas.addEventListener('touchend', endTouch);
+        canvas.addEventListener('touchcancel', endTouch);
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        // 觸控後瀏覽器補發的 click 不算選取（只有滑鼠點擊才算）
+        canvas.addEventListener('click', e => {
+            if (Date.now() - lastTouchEnd < 800) return;
+            handlePointer(e);
+        });
     }
 
     function renderChart(id, prices, days) {
