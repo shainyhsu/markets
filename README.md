@@ -36,6 +36,7 @@ A single-page tool that converts Bitcoin (BTC) and gold (XAU) to US dollars at t
 
 Newest first. Times are Taiwan time (UTC+8). Also kept in [CHANGELOG.md](CHANGELOG.md).
 
+- V19 | 2026-11-13 09:36 | Added a classic favicon.ico tab icon for older browsers and search tools.
 - V18 | 2026-11-13 09:20 | Added a tab icon and an "All tools" link in the footer; the chart library loads without holding up the page, and the amount boxes have labels for screen readers.
 - V17 | 2026-11-12 23:40 | On a phone, charts now leave the page free to scroll: a quick tap or swipe scrolls, and you hold a finger still on a chart for half a second to show a price, then slide to move it
 - V16 | 2026-11-11 10:07 | New license terms: free to use in a browser for personal, work, school or club use, and the results you make are yours to share; copying, paid services built on it, and AI training need written permission. A License link sits at the bottom of the page
