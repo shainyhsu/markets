@@ -2,6 +2,7 @@
 
 Newest first. Each update of the page is one version. Times are Taiwan time (UTC+8).
 
+- V18 | 2026-11-13 09:20 | Added a tab icon and an "All tools" link in the footer; the chart library loads without holding up the page, and the amount boxes have labels for screen readers.
 - V17 | 2026-11-12 23:40 | On a phone, charts now leave the page free to scroll: a quick tap or swipe scrolls, and you hold a finger still on a chart for half a second to show a price, then slide to move it
 - V16 | 2026-11-11 10:07 | New license terms: free to use in a browser for personal, work, school or club use, and the results you make are yours to share; copying, paid services built on it, and AI training need written permission. A License link sits at the bottom of the page
 - V15 | 2026-11-10 00:18 | Added a link-preview image (1200×630) so shared links show a picture in LINE, Facebook and other apps.
