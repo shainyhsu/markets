@@ -2,6 +2,7 @@
 
 Newest first. Each update of the page is one version. Times are Taiwan time (UTC+8).
 
+- V21 | 2026-11-25 09:09 | The light/dark switch now also keeps <meta name="color-scheme"> in step with the theme, as Modern Web Guidance asks; colors and layout unchanged.
 - V20 | 2026-11-25 09:01 | Chart.js is pinned to 4.6.2, the same file the page already loaded, and checked with Subresource Integrity; the screen-reader-only title is hidden with clip-path instead of the deprecated clip. Layout unchanged.
 - V19 | 2026-11-13 09:36 | Added a classic favicon.ico tab icon for older browsers and search tools.
 - V18 | 2026-11-13 09:20 | Added a tab icon and an "All tools" link in the footer; the chart library loads without holding up the page, and the amount boxes have labels for screen readers.

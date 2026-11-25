@@ -1,6 +1,6 @@
 # 01_CURRENT_STATE.md（SSSM 語義狀態空間快照）
 
-- 最後更新：2026-11-25 08:28（台灣時間）
+- 最後更新：2026-11-25 09:09（台灣時間）
 
 ## 1. 逐字任務目標（Verbatim Objective & Done Criteria）
 
@@ -9,7 +9,7 @@
 
 ## 2. 已驗證事實（Verified Facts）
 
-- 版本：main 為 V19（2026-11-13 09:36）；本分支 V20。〔程式碼核對〕
+- 版本：main 為 V20（2026-11-25 09:01）；本分支 V21。〔程式碼核對〕
 - 價格資料：Binance 現貨與合約 REST（api.binance.com/api/v3/、fapi.binance.com/fapi/v1/）與 WebSocket（stream.binance.com、fstream.binance.com）；connectWebSocket()、fetchKlines()。〔程式碼核對〕
 - Chart.js：V19 載入未鎖版本的 https://cdn.jsdelivr.net/npm/chart.js（2026-11-25 解析為 4.6.2 的 dist/chart.umd.min.js）；V20 改鎖同一檔案並加 SRI，位元組相同，sha384 與 npm 套件原檔一致。〔雜湊比對〕
 - 狀態存 localStorage：btc_lang、live_symbol、live_tz、theme；無 Service Worker、manifest、IndexedDB。〔程式碼核對〕
@@ -22,4 +22,5 @@
 ## 4. 已套用變更與下一步唯一動作（Applied Changes & Immediate Next Action）
 
 - 已修改檔案（2026-11-25，09:01 合併上線）：index.html（Chart.js 鎖 4.6.2＋SRI；螢幕閱讀器用的隱藏 h1 由 clip: rect() 改 clip-path: inset(50%)）、README.md、CHANGELOG.md（V20）、AGENTS.md（Popover 說明、改指向 .ai/）、新建 .ai/00–02。
+- 已修改檔案（2026-11-25，分支 theme-meta，PR 待合併）：index.html（開頁腳本與切換鈕同步 `<meta name="color-scheme">`）、README.md、CHANGELOG.md（V21）。
 - 下一步唯一動作：待 Shainy 指定。
