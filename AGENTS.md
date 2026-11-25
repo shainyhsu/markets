@@ -2,15 +2,13 @@
 
 Instructions for coding agents (Claude, Codex, Gemini, Cursor and others) working on this repo: BTC & Gold Live Rates (Live Rate & Charts), one of Shainy Hsu's web tools. The hub repo shainyhsu/shainyhsu.github.io holds the home page and the shared rules.
 
-## Project state
-
-This repo has no `.ai/` state files yet. Before the first code change, create them here in the format the hub uses (https://github.com/shainyhsu/shainyhsu.github.io/tree/main/.ai):
+## Read first
 
 1. `.ai/00_INTERFACE_CONTRACT.md`: function index (name and line range) for index.html
-2. `.ai/01_CURRENT_STATE.md`: the one task in progress and its done criteria, verified facts, unverified ideas, next single action
+2. `.ai/01_CURRENT_STATE.md`: the one task in progress and its done criteria
 3. `.ai/02_DECISION_LOG.md`: decisions to keep and dead ends not to retry
 
-Fill them only with facts checked against the code, and write 「待 Shainy 指定」 wherever you don't know. Ask Shainy which task to do; don't pick one yourself.
+Don't change code before you have read 01 and 02. After a change, update the line numbers in 00 and the applied changes in 01.
 
 ## Rules (SSSM short-context protocol)
 
@@ -18,7 +16,7 @@ Fill them only with facts checked against the code, and write 「待 Shainy 指�
 2. Read selectively. Find a function with `grep -n`, then read at most 150 lines or 6,000 characters at a time (index.html is about 810 lines).
 3. Keep facts and ideas apart. Nothing in 01 section 3 is implemented. Mark any new algorithm or structure [Unverified] until Shainy has tested it.
 4. Check the dead ends in 02 before proposing anything.
-5. Modern Web Guidance 1.0. This project's Baseline target is "Baseline Widely available". Prefer native APIs (`<dialog>`, Popover API, CSS Grid/Subgrid, IndexedDB/OPFS) over polyfills and libraries.
+5. Modern Web Guidance 1.0. This project's Baseline target is "Baseline Widely available". Prefer native APIs (`<dialog>`, CSS Grid/Subgrid, IndexedDB/OPFS) over polyfills and libraries. The Popover API is only Baseline Newly available (since 2025-01-27, Widely available from 2027-07-27): use it only with the fallback its guide gives.
 6. End every reply with this status brief, 180 characters or fewer, instead of a recap:
 
 ```
